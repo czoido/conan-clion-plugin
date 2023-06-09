@@ -37,7 +37,15 @@ import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableRowSorter
-
+import com.intellij.execution.RunManager
+import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.openapi.application.ApplicationManager
+import com.jetbrains.rd.util.string.printToString
+import com.jetbrains.cidr.cpp.cmake.*
+import com.jetbrains.cidr.cpp.cmake.CMakeRunnerStep.Parameters
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace
+import com.jetbrains.rd.util.string.printToString
 
 class ConanWindowFactory : ToolWindowFactory {
 
@@ -58,6 +66,45 @@ class ConanWindowFactory : ToolWindowFactory {
     class ConanWindow(toolWindow: ToolWindow, project: Project) {
         private val project = project
         private val stateService = this.project.service<RemotesDataStateService>()
+
+        fun getActiveCMakeParameters(project: Project): String? {
+//            val runManager = RunManager.getInstance(project)
+//            val selectedConfiguration: RunnerAndConfigurationSettings? = runManager.selectedConfiguration
+//            if (selectedConfiguration != null && selectedConfiguration.type.id == "CMakeRunConfiguration") {//&& selectedConfiguration.type.id == CMakeRunner.RUN_CONFIGURATION_TYPE_ID) {
+//                println(selectedConfiguration.type.id)
+//                val executor = DefaultRunExecutor.getRunExecutorInstance()
+//                val executionSettings = runManager.createRunnerAndConfigurationSettings(selectedConfiguration, executor)?.settings
+//                //if (executionSettings is CMakeRunner.CMakeRunConfiguration) {
+//                //    return executionSettings.parameters
+//                //}
+//                //return executionSettings.parameters
+//                return null
+//            }
+            val runManager = RunManager.getInstance(project)
+            val selectedConfiguration = runManager.selectedConfiguration
+            if (selectedConfiguration != null && selectedConfiguration.type.id == "CMakeRunConfiguration") {
+                val configuration = selectedConfiguration.configuration
+                val settings = runManager.findSettings(configuration)
+                val jander: String? = settings?.name
+                println("settings?.name------->>> ${jander}")
+                selectedConfiguration.g
+                //return configuration.parameters
+            }
+
+            println("modifyParameters")
+            //val profileName = parameters.getUserData(Parameters.PROFILE_NAME)
+            val cmakeSettings = CMakeSettings.getInstance(project)
+            //val profile = cmakeSettings.profiles.find { it.name == profileName }
+            cmakeSettings.activeProfiles.forEach { profile ->
+                val compiler = profile?.toolchainName
+                val configuration = profile?.buildType
+                println(profile.printToString())
+                println("configuration------->>> ${compiler}, ${configuration}, ${profile?.generationOptions}")
+
+            }
+
+            return null
+        }
 
         fun getContent() = OnePixelSplitter(false).apply {
             val secondComponentPanel = JBPanelWithEmptyText().apply {
@@ -165,6 +212,20 @@ class ConanWindowFactory : ToolWindowFactory {
                             val installButton = JButton("Install").apply {
                                 isEnabled = false
                                 addActionListener {
+
+                                    val cMakeWorkspace = CMakeWorkspace.getInstance(project)
+                                    //cMakeWorkspace.updateContentRoots()
+                                    val cmakeSettings = CMakeSettings.getInstance(project)
+
+//                                    ApplicationManager.getApplication().runWriteAction {
+//                                        cmakeSettings.clearLoadedSettings()
+//                                        cmakeSettings.loadState(cmakeSettings.state)
+//                                    }
+
+                                    //cMakeWorkspace.reloadProject()
+
+                                    val params = getActiveCMakeParameters(project)
+
                                     Conan(project).install(name, comboBox.selectedItem as String) { runOutput ->
                                         thisLogger().info("Command exited with status ${runOutput.exitCode}")
                                         thisLogger().info("Command stdout: ${runOutput.stdout}")
