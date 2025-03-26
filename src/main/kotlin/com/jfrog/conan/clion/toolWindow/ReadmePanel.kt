@@ -26,6 +26,43 @@ class ReadmePanel(val project: Project) {
     private val targetsDataAsText = project.service<ConanService>().getTargetDataText()
     private val libraryData = project.service<ConanService>().getTargetData()
 
+    // Método para actualizar el contenido del panel según el modo seleccionado
+    fun updateContent(libraryName: String, version: String, mode: String) {
+        val html = if (mode == "how_to_use") getHtml(libraryName) else getAuditHtml(libraryName, version)
+        htmlPanel.loadHTML(html)
+    }
+
+    // Genera el HTML para las instrucciones de "Scan vulnerabilities"
+    fun getAuditHtml(libraryName: String, version: String): String {
+        val themeStyles = generateThemeStyles()
+        return """
+    <html>
+    <head>
+        <style>
+            $themeStyles
+        </style>
+    </head>
+    <body>
+        <div id="info">
+            <h2>🔍 Ready to secure your dependencies in seconds?</h2>
+            <p>Register for free at <a href="https://audit.conan.io/register" target="_blank">audit.conan.io/register</a>.</p>
+            <p>Save your token and activate it via the confirmation email you receive.</p>
+            <p>Configure Conan to use your token:</p>
+            <pre class="code">conan audit provider auth conancenter --token=&lt;token&gt;</pre>
+            <p>Scan for vulnerabilities:</p>
+            <pre class="code"># Check a specific reference
+conan audit list ${'$'}{libraryName}/${'$'}{version}
+
+# Scan the entire dependency graph
+conan audit scan --requires=${'$'}{libraryName}/${'$'}{version}</pre>
+            <p>Note: For more details on the Conan Audit command, please read <a href="https://example.com" target="_blank">this post</a>.</p>
+            <p>Tip: To avoid exposing your token in shell history, authenticate using an environment variable (e.g., CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER=&lt;token&gt;). For more info, see the documentation.</p>
+        </div>
+    </body>
+    </html>
+    """.trimIndent()
+    }
+
     fun getTitleHtml(name: String): String {
         val description = libraryData.libraries[name]?.description
         val licenses = libraryData.libraries[name]?.license
